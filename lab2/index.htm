@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة XO الحديثة - الوليد</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 { margin-bottom: 1rem; font-size: 2rem; color: var(--primary); }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            transition: 0.3s;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .status {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #fff;
+            min-height: 1.5em;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .cell:active { transform: scale(0.95); }
+        .cell:hover { background: rgba(255, 255, 255, 0.1); }
+        .cell.x { color: var(--primary); }
+        .cell.o { color: var(--secondary); }
+
+        .reset-btn {
+            background: var(--secondary);
+            padding: 14px;
+            font-weight: bold;
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+            line-height: 1.8;
+        }
+
+        .win-highlight { background: rgba(34, 197, 94, 0.3) !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>لعبة XO</h1>
+        
+        <div class="mode-selector">
+            <button id="p2" class="mode-btn active" onclick="setMode('p2')">لاعبين</button>
+            <button id="p1" class="mode-btn" onclick="setMode('p1')">ضد الكمبيوتر</button>
+        </div>
+
+        <div class="status" id="status">دور اللاعب X</div>
+
+        <div class="board" id="board">
+            <div class="cell" onclick="handleCellClick(0)"></div>
+            <div class="cell" onclick="handleCellClick(1)"></div>
+            <div class="cell" onclick="handleCellClick(2)"></div>
+            <div class="cell" onclick="handleCellClick(3)"></div>
+            <div class="cell" onclick="handleCellClick(4)"></div>
+            <div class="cell" onclick="handleCellClick(5)"></div>
+            <div class="cell" onclick="handleCellClick(6)"></div>
+            <div class="cell" onclick="handleCellClick(7)"></div>
+            <div class="cell" onclick="handleCellClick(8)"></div>
+        </div>
+
+        <button class="reset-btn" onclick="resetGame()">إعادة اللعب</button>
+
+        <footer>
+            اسم الطالب: <strong>الوليد خالد باودود</strong> | الرقم الجامعي: <strong>446006604</strong><br>
+            إشراف: <strong>أ. محمد جبلي</strong>
+        </footer>
+    </div>
+
+    <script>
+        let gameState = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "X";
+        let gameActive = true;
+        let gameMode = "p2";
+
+        const statusDisplay = document.getElementById('status');
+        const cells = document.querySelectorAll('.cell');
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function setMode(mode) {
+            gameMode = mode;
+            document.getElementById('p1').classList.toggle('active', mode === 'p1');
+            document.getElementById('p2').classList.toggle('active', mode === 'p2');
+            resetGame();
+        }
+
+        function handleCellClick(index) {
+            if (gameState[index] !== "" || !gameActive) return;
+
+            executeMove(index);
+
+            if (gameActive && gameMode === "p1" && currentPlayer === "O") {
+                statusDisplay.innerText = "تفكير الكمبيوتر...";
+                setTimeout(aiMove, 600);
+            }
+        }
+
+        function executeMove(index) {
+            gameState[index] = currentPlayer;
+            cells[index].innerText = currentPlayer;
+            cells[index].classList.add(currentPlayer.toLowerCase());
+            
+            checkWinner();
+
+            if (gameActive) {
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+                statusDisplay.innerText = `دور اللاعب ${currentPlayer}`;
+            }
+        }
+
+        function aiMove() {
+            if (!gameActive) return;
+            let available = gameState.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+            if (available.length > 0) {
+                const randomIdx = available[Math.floor(Math.random() * available.length)];
+                executeMove(randomIdx);
+            }
+        }
+
+        function checkWinner() {
+            let roundWon = false;
+            for (let condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+                    roundWon = true;
+                    condition.forEach(i => cells[i].classList.add('win-highlight'));
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusDisplay.innerText = `الفائز هو ${currentPlayer}! 🎉`;
+                gameActive = false;
+                return;
+            }
+
+            if (!gameState.includes("")) {
+                statusDisplay.innerText = "تعادل! 🤝";
+                gameActive = false;
+            }
+        }
+
+        function resetGame() {
+            gameState = ["", "", "", "", "", "", "", "", ""];
+            gameActive = true;
+            currentPlayer = "X";
+            statusDisplay.innerText = "دور اللاعب X";
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.classList.remove('x', 'o', 'win-highlight');
+            });
+        }
+    </script>
+</body>
+</html>
