@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة XO - الوليد</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+
+        .status {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .cell:hover { background: rgba(255, 255, 255, 0.1); }
+        .cell.X { color: var(--primary); }
+        .cell.O { color: var(--secondary); }
+
+        .reset-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            width: 100%;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="status" id="statusText">دور اللاعب X</div>
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <button class="reset-btn" onclick="restartGame()">إعادة اللعب</button>
+
+    <footer>
+        اسم الطالب: الوليد خالد باودود | الرقم الجامعي: 446006604 <br>
+        إشراف: أ. محمد جبلي
+    </footer>
+</div>
+
+<script>
+    const cells = document.querySelectorAll('.cell');
+    const statusText = document.getElementById('statusText');
+    let currentPlayer = "X"; // يبدأ اللاعب X دائماً
+    let options = ["", "", "", "", "", "", "", "", ""];
+    let running = true;
+
+    // تهيئة اللعبة
+    cells.forEach(cell => cell.addEventListener('click', cellClicked));
+
+    function cellClicked() {
+        const cellIndex = this.getAttribute('data-index');
+
+        if (options[cellIndex] != "" || !running) {
+            return;
+        }
+
+        updateCell(this, cellIndex);
+        checkWinner();
+    }
+
+    function updateCell(cell, index) {
+        options[index] = currentPlayer;
+        cell.innerText = currentPlayer;
+        cell.classList.add(currentPlayer);
+    }
+
+    function changePlayer() {
+        // هنا الحل: يتم تبديل الدور من X إلى O والعكس
+        currentPlayer = (currentPlayer == "X") ? "O" : "X";
+        statusText.innerText = `دور اللاعب ${currentPlayer}`;
+    }
+
+    function checkWinner() {
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        let roundWon = false;
+
+        for (let i = 0; i < winConditions.length; i++) {
+            const condition = winConditions[i];
+            const cellA = options[condition[0]];
+            const cellB = options[condition[1]];
+            const cellC = options[condition[2]];
+
+            if (cellA == "" || cellB == "" || cellC == "") {
+                continue;
+            }
+            if (cellA == cellB && cellB == cellC) {
+                roundWon = true;
+                break;
+            }
+        }
+
+        if (roundWon) {
+            statusText.innerText = `الفائز هو ${currentPlayer}!`;
+            running = false;
+        } else if (!options.includes("")) {
+            statusText.innerText = `تعادل!`;
+            running = false;
+        } else {
+            changePlayer();
+        }
+    }
+
+    function restartGame() {
+        currentPlayer = "X";
+        options = ["", "", "", "", "", "", "", "", ""];
+        statusText.innerText = `دور اللاعب X`;
+        cells.forEach(cell => {
+            cell.innerText = "";
+            cell.classList.remove("X", "O");
+        });
+        running = true;
+    }
+</script>
+
+</body>
+</html>
